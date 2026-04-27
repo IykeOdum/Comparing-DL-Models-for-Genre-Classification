@@ -1,1 +1,6 @@
+# Virtual Env
 venv/
+gtzan/genres_original/
+
+# Python
+__pycache__/
