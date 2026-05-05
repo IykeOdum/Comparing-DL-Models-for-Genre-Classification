@@ -18,9 +18,8 @@ CORRUPT_FILES = {"jazz.00054.wav"}
 def load_audio(path: str) -> np.ndarray:
     """Load a wav file, resample to config.SAMPLE_RATE, trim/pad to config.DURATION."""
     target_len = config.SAMPLE_RATE * config.DURATION
-    # librosa loads mono by default; res_type='kaiser_fast' trades slight quality for speed
-    waveform, _ = librosa.load(path, sr=config.SAMPLE_RATE, mono=True,
-                               res_type="kaiser_fast")
+    # librosa loads mono by default;
+    waveform, _ = librosa.load(path, sr=config.SAMPLE_RATE, mono=True, res_type="scipy")
     # Trim or zero-pad to exactly target_len samples
     if len(waveform) >= target_len:
         waveform = waveform[:target_len]
@@ -88,33 +87,43 @@ class GTZANDataset(Dataset):
     def __init__(self, root: str, indices: list[int], augment: bool = False):
         self.augment = augment
         self.label_map = {genre: i for i, genre in enumerate(config.GENRES)}
-
-        # Collect all (file_path, label_int) pairs
-        self.samples: list[tuple[str, int]] = []
+        
+        all_samples = []
         for genre in config.GENRES:
             genre_dir = os.path.join(root, genre)
-            if not os.path.isdir(genre_dir):
-                raise FileNotFoundError(
-                    f"Genre folder not found: {genre_dir}\n"
-                    f"Make sure GTZAN_ROOT in config.py points to the genres_original/ folder."
-                )
             for fname in sorted(os.listdir(genre_dir)):
                 if fname.endswith(".wav") and fname not in CORRUPT_FILES:
-                    self.samples.append((os.path.join(genre_dir, fname), self.label_map[genre]))
+                    all_samples.append((os.path.join(genre_dir, fname), self.label_map[genre]))
+        
+        self.samples = [all_samples[i] for i in indices]
+        
+        # --- NEW: Pre-cache the data ---
+        print(f"Pre-loading {len(self.samples)} samples into memory...")
+        self.cached_data = []
+        for path, label in self.samples:
+            waveform = load_audio(path)
+            # If NOT augmenting, we can pre-calculate the spec too
+            if not self.augment:
+                spec = waveform_to_melspec(waveform)
+                self.cached_data.append((torch.from_numpy(spec), label))
+            else:
+                # Store waveform to skip disk I/O and resampling later
+                self.cached_data.append((waveform, label))
 
-        # Apply the split
-        self.samples = [self.samples[i] for i in indices]
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
+        data, label = self.cached_data[idx]
+        
+        if self.augment:
+            # Data is currently a waveform; augment and convert now
+            waveform = augment_waveform(data)
+            spec = waveform_to_melspec(waveform) # (1, N_MELS, T)
+            return torch.from_numpy(spec), label
+        
+        # Data is already a spec tensor
+        return data, label
 
     def __len__(self) -> int:
         return len(self.samples)
-
-    def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
-        path, label = self.samples[idx]
-        waveform = load_audio(path)
-        if self.augment:
-            waveform = augment_waveform(waveform)
-        spec = waveform_to_melspec(waveform)          # (1, N_MELS, T)
-        return torch.from_numpy(spec), label
 
 
 # ── Split helper ───────────────────────────────────────────────────────────────

@@ -4,10 +4,10 @@
 import torch
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-GTZAN_ROOT = "./gtzan/genres_original"   # adjust to where you unzipped GTZAN
+GTZAN_ROOT = "/kaggle/input/gtzan-dataset-music-genre-classification/Data/genres_original"   # adjust to where you unzipped GTZAN
 
 # ── Audio preprocessing ────────────────────────────────────────────────────────
-SAMPLE_RATE   = 22050   # resample all audio to this rate
+SAMPLE_RATE   = 16000   # resample all audio to this rate #22050
 DURATION      = 30      # seconds to use per track (GTZAN tracks are ~30s)
 N_MELS        = 128     # number of Mel filter banks
 N_FFT         = 2048    # FFT window size
@@ -22,7 +22,7 @@ TEST_RATIO    = 0.15
 RANDOM_SEED   = 42
 
 # ── Data augmentation (applied only during training) ──────────────────────────
-AUGMENT            = True
+AUGMENT            = False # True
 PITCH_SHIFT_STEPS  = 2      # semitones, chosen uniformly in [-n, n]
 TIME_STRETCH_RANGE = (0.85, 1.15)
 NOISE_STD          = 0.005  # std of Gaussian noise added to waveform
@@ -30,7 +30,7 @@ NOISE_STD          = 0.005  # std of Gaussian noise added to waveform
 # ── Training ───────────────────────────────────────────────────────────────────
 BATCH_SIZE    = 32
 NUM_EPOCHS    = 50
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-2 #1e-3
 WEIGHT_DECAY  = 1e-4        # L2 regularization
 DROPOUT_RATE  = 0.4
 
