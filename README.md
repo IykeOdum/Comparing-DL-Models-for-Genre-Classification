@@ -31,7 +31,24 @@ music_classification/
 
 ---
 
-## Setup
+## Running
+
+**The recommended way to run this project is via Google Colab:**
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Y8LSg4tDirvv-bR_deuMOWfHhM_sWgWF?usp=sharing)
+
+> **Important — Kaggle API credentials:** The Colab notebook downloads the GTZAN dataset directly from Kaggle. Before running, you must configure your Kaggle API key. In Colab, go to the *Secrets* panel (Key icon in the left sidebar) and add the following two secrets:
+>
+> | Secret name | Value |
+> |---|---|
+> | `KAGGLE_USERNAME` | Your Kaggle username |
+> | `KAGGLE_KEY` | Your Kaggle API key (found at kaggle.com → Account → API → Create New Token) |
+>
+> The notebook reads these secrets at runtime to authenticate the dataset download. Without them, the setup cell will fail.
+
+---
+
+## Local Setup (alternative)
 
 ### 1. Get the dataset
 
@@ -68,7 +85,7 @@ pip install torch torchaudio librosa soundfile numpy pandas matplotlib seaborn s
 
 ---
 
-## Running
+## Running Locally
 
 **Verify models load correctly** (no dataset needed):
 
@@ -114,12 +131,12 @@ All hyperparameters live in `config.py`. Key settings:
 
 | Parameter | Default | Description |
 |---|---|---|
-| `SAMPLE_RATE` | 22050 | Hz; all audio is resampled to this |
+| `SAMPLE_RATE` | 16000 | Hz; all audio is resampled to this |
 | `N_MELS` | 128 | Number of Mel filter banks |
-| `AUGMENT` | `True` | Enable pitch shift, time stretch, additive noise during training |
+| `AUGMENT` | `False` | Enable pitch shift, time stretch, additive noise during training |
 | `BATCH_SIZE` | 32 | |
 | `NUM_EPOCHS` | 50 | |
-| `LEARNING_RATE` | 1e-3 | Adam optimizer |
+| `LEARNING_RATE` | 1e-2 | Adam optimizer |
 | `WEIGHT_DECAY` | 1e-4 | L2 regularization |
 | `DROPOUT_RATE` | 0.4 | Applied in classifier heads |
 
@@ -129,12 +146,12 @@ All hyperparameters live in `config.py`. Key settings:
 
 ```
 .wav file
-  └─ resample to 22 050 Hz, trim/pad to 30s
+  └─ resample to 16 000 Hz, trim/pad to 30s
        └─ [optional augmentation: pitch shift, time stretch, noise]
             └─ Mel spectrogram  (n_fft=2048, hop=512, n_mels=128)
                  └─ power_to_dB  (log scale, ref=max)
                       └─ normalize  (zero mean, unit variance)
-                           └─ shape: (1, 128, ~1292)  →  model input
+                           └─ shape: (1, 128, ~938)  →  model input
 ```
 
 ---
